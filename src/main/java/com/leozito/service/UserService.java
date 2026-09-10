@@ -33,16 +33,17 @@ public class UserService {
     public User atualizar(UUID id, User userAtualizado) {
         User userExistente = buscarPorId(id);
 
-        userExistente.setName(userAtualizado.getName());
         userExistente.setEmail(userAtualizado.getEmail());
+        userExistente.setPassword(userAtualizado.getPassword());
 
         userDatabase.put(id, userExistente);
         return userExistente;
 
     }
-    
-
-    // finalziar o crud com o metodo delet
-
+  
+    public void deletar(UUID id) {
+        buscarPorId(id); 
+        userDatabase.remove(id);
+    }
 
 }
