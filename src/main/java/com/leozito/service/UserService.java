@@ -1,8 +1,14 @@
 package com.leozito.service;
 
-import java.util.List;
-
 import com.leozito.domain.User;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ws.rs.NotFoundException;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @ApplicationScoped
 public class UserService {
