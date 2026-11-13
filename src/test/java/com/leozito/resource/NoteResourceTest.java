@@ -8,14 +8,15 @@ import static org.hamcrest.CoreMatchers.is;
 
 @QuarkusTest
 class NoteResourceTest {
-    
+
     @Test
-    void testHelloEndpoint() {
+    void getNotasComBancoVazioDeveRetornar200ComListaVazia() {
+        // Assume o armazenamento em memória vazio. Se outros testes
+        // passarem a criar notas, este teste precisa limpar o estado antes.
         given()
           .when().get("/api/notes")
           .then()
              .statusCode(200)
-             .body(is("Hello from Quarkus REST"));
+             .body(is("[]"));
     }
-
 }
