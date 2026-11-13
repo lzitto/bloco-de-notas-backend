@@ -4,6 +4,7 @@ import com.leozito.domain.User;                 // entidade testada
 import jakarta.ws.rs.NotFoundException;         // mesma exceção do UserService.buscarPorId
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import com.leozito.domain.BusinessException; 
 
 import java.util.List;
 import java.util.UUID;
@@ -65,5 +66,13 @@ class UserServiceTest {
 
         assertThrows(NotFoundException.class,
                 () -> userService.buscarPorId(user.getId())); // sumiu do Map
+    }
+
+    @Test
+    void criarComEmailDuplicadoDeveLancarBusinessException() {
+        userService.criar(new User("dup@x.com", "senha1"));      // 1º ok
+        // 2º mesmo email → deve falhar na regra
+        assertThrows(BusinessException.class,
+                () -> userService.criar(new User("dup@x.com", "senha2")));
     }
 }

@@ -1,5 +1,6 @@
 package com.leozito.service;
 
+import com.leozito.domain.BusinessException;
 import com.leozito.domain.User;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.NotFoundException;
@@ -31,7 +32,17 @@ public class UserService {
     public User criar(User user) {
         if (user.getId() == null) {
             user.setId(UUID.randomUUID());
-        }   
+        }
+
+        // REGRA PURA: email único — percorre o Map e compara
+        // Objects.equals evita NPE se algum email for null
+        boolean emailJaExiste = userDatabase.values().stream()
+                .anyMatch(u -> java.util.Objects.equals(u.getEmail(), user.getEmail()));
+        if (emailJaExiste) {
+            // violou a regra → exceção de DOMÍNIO (não HTTP)
+            throw new BusinessException("Email já cadastrado: " + user.getEmail());
+        }
+
         userDatabase.put(user.getId(), user);
         return user;
     }
