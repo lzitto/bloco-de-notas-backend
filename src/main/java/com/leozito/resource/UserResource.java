@@ -3,10 +3,10 @@ package com.leozito.resource;
 import com.leozito.domain.User;
 import com.leozito.dto.UserRequest;
 import com.leozito.service.UserService;
-import org.eclipse.microprofile.openapi.annotations.Operation; // anotação MicroProfile (vem com smallrye-openapi)
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import jakarta.inject.Inject;
-import jakarta.validation.Valid;              // dispara as anotações do DTO
+import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -14,17 +14,17 @@ import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.UUID;
 
-@Tag(name = "Usuários", description = "CRUD de usuários") // Swagger: agrupa no UI
-@Path("/usuarios")
+@Tag(name = "Usuários", description = "CRUD de usuários")
+@Path("/api/users")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class UserResource {
 
     @Inject
-    UserService userService; // CDI injeta o bean @ApplicationScoped
+    UserService userService;
 
     @GET
-    @Operation(summary = "Lista todos os usuários") // Swagger: descrição do endpoint
+    @Operation(summary = "Lista todos os usuários")
     public List<User> listarTodos() {
         return userService.listarTodos();
     }
@@ -38,8 +38,7 @@ public class UserResource {
 
     @POST
     @Operation(summary = "Cria usuário (email único)")
-    public Response criar(@Valid UserRequest dto) { // @Valid = roda @NotBlank/@Email
-        // mapeia DTO → domínio: regras do service continuam valendo
+    public Response criar(@Valid UserRequest dto) {
         User user = new User(dto.getEmail(), dto.getPassword());
         User novoUsuario = userService.criar(user);
         return Response.status(Response.Status.CREATED).entity(novoUsuario).build();

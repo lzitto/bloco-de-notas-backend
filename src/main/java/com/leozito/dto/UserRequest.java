@@ -12,7 +12,7 @@ public class UserRequest {
     private String email;
 
     @NotBlank(message = "password é obrigatória")
-    private String password; // armazenada; NUNCA volta na resposta (ver 5.4)
+    private String password;
 
     // getters e setters: Jackson desserializa JSON → objeto por eles
     public String getEmail() { return email; }

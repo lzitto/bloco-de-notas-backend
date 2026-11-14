@@ -1,5 +1,6 @@
 package com.leozito.domain;
-import com.fasterxml.jackson.annotation.JsonIgnore; // import novo
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.UUID;
 
@@ -34,7 +35,7 @@ public class User {
         this.email = email;
     }
 
-    @JsonIgnore // Jackson: NÃO serializa a senha em nenhuma resposta JSON
+    @JsonIgnore
     public String getPassword() {
         return password;
     }
