@@ -1,7 +1,9 @@
 package com.leozito.service;
 
+import com.leozito.domain.BusinessException;
 import com.leozito.domain.Note;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
 
 import java.util.ArrayList;
@@ -15,6 +17,13 @@ import java.util.stream.Collectors;
 public class NoteService {
 
     private final Map<UUID, Note> noteDatabase = new ConcurrentHashMap<>();
+
+    private final UserService userService;
+
+    @Inject
+    public NoteService(UserService userService) {
+        this.userService = userService;
+    }
 
     public List<Note> listarTodas() {
         return new ArrayList<>(noteDatabase.values());
@@ -35,6 +44,9 @@ public class NoteService {
     }
 
     public Note criar(Note note) {
+        if (!userService.existe(note.getUserId())) {
+            throw new BusinessException("Usuário não existe: " + note.getUserId());
+        }
         if (note.getId() == null) {
             note.setId(UUID.randomUUID());
         }

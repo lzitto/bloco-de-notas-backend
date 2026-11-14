@@ -8,6 +8,7 @@ import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -19,6 +20,10 @@ public class UserService {
 
     public List<User> listarTodos() {
         return new ArrayList<>(userDatabase.values());
+    }
+
+    public boolean existe(UUID id) {
+        return id != null && userDatabase.containsKey(id);
     }
 
     public User buscarPorId(UUID id) {
@@ -34,14 +39,7 @@ public class UserService {
             user.setId(UUID.randomUUID());
         }
 
-        // REGRA PURA: email único — percorre o Map e compara
-        // Objects.equals evita NPE se algum email for null
-        boolean emailJaExiste = userDatabase.values().stream()
-                .anyMatch(u -> java.util.Objects.equals(u.getEmail(), user.getEmail()));
-        if (emailJaExiste) {
-            // violou a regra → exceção de DOMÍNIO (não HTTP)
-            throw new BusinessException("Email já cadastrado: " + user.getEmail());
-        }
+        validarEmailUnico(user.getEmail(), user.getId());
 
         userDatabase.put(user.getId(), user);
         return user;
@@ -50,12 +48,22 @@ public class UserService {
     public User atualizar(UUID id, User userAtualizado) {
         User userExistente = buscarPorId(id);
 
+        validarEmailUnico(userAtualizado.getEmail(), id);
+
         userExistente.setEmail(userAtualizado.getEmail());
         userExistente.setPassword(userAtualizado.getPassword());
 
         userDatabase.put(id, userExistente);
         return userExistente;
+    }
 
+    private void validarEmailUnico(String email, UUID idIgnorado) {
+        boolean jaExiste = userDatabase.values().stream()
+                .filter(u -> !u.getId().equals(idIgnorado))   // ignora o próprio usuário
+                .anyMatch(u -> Objects.equals(u.getEmail(), email));
+        if (jaExiste) {
+            throw new BusinessException("Email já cadastrado: " + email);
+        }
     }
   
     public void deletar(UUID id) {

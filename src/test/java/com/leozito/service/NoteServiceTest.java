@@ -1,55 +1,58 @@
 // Pacote do serviço testado — teste unitário fica perto da classe (convenção)
 package com.leozito.service;
 
-import com.leozito.domain.Note;                 // entidade que o service manipula
-import jakarta.ws.rs.NotFoundException;         // exceção que o NoteService LANÇA (NoteService.java:26)
-import org.junit.jupiter.api.BeforeEach;        // roda antes de CADA @Test
-import org.junit.jupiter.api.Test;              // marca método como teste JUnit 5
+import com.leozito.domain.BusinessException;
+import com.leozito.domain.Note;
+import jakarta.ws.rs.NotFoundException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.util.List;                          // retorno de buscarPorUsuario
-import java.util.UUID;                          // ids das notas/usuários
+import java.util.List;
+import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*; // assertThrows, assertEquals, assertNotNull...
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 // SEM @QuarkusTest de propósito: só JVM + JUnit = teste UNITÁRIO (rápido, isola a regra)
 class NoteServiceTest {
 
-    private NoteService noteService;            // referência criada em cada teste
+    private NoteService noteService;
+    private UserService userService;
 
-    @BeforeEach                                 // por que não static/um só para todos?
-    void setUp() {                              // → o Map fica na INSTÂNCIA; serviço novo
-        noteService = new NoteService();        //   = estado zerado = testes não poluem uns aos outros
+    @BeforeEach
+    void setUp() {
+        userService = mock(UserService.class);
+        when(userService.existe(any(UUID.class))).thenReturn(true);
+        noteService = new NoteService(userService);
     }
 
     @Test
-    void criarDeveGerarIdEPermitirBusca() {
-        Note nota = new Note(UUID.randomUUID(), "T1", "C1");  // dado de entrada
-        Note criada = noteService.criar(nota);                 // quando: chama o método real
-        assertNotNull(criada.getId());                         // então: UUID foi gerado (não null)
-        assertEquals(criada, noteService.buscarPorId(criada.getId())); // e achou de volta no Map
+    void criarDeveGuardarNotaEPermitirBuscaPorId() {
+        Note nota = new Note(UUID.randomUUID(), "T1", "C1");
+        Note criada = noteService.criar(nota);
+        assertEquals(criada, noteService.buscarPorId(criada.getId()));
     }
 
     @Test
     void buscarPorIdInexistenteDeveLancarNotFound() {
-        UUID idQueNaoExiste = UUID.randomUUID();              // id nunca inserido no Map
-        // assertThrows(EXCECAÇÃO_ESPERADA, lambda) = "deve lançar X ao executar Y"
-        assertThrows(NotFoundException.class,                 // era essa a previsão da Q1: (b)
-                () -> noteService.buscarPorId(idQueNaoExiste)); // lambda = código que deve falhar
+        UUID idQueNaoExiste = UUID.randomUUID();
+        assertThrows(NotFoundException.class,
+                () -> noteService.buscarPorId(idQueNaoExiste));
     }
 
     @Test
     void buscarPorUsuarioDeveFiltrarApenasNotasDesteUsuario() {
-        UUID dono1 = UUID.randomUUID();                       // dois donos diferentes
+        UUID dono1 = UUID.randomUUID();
         UUID dono2 = UUID.randomUUID();
-        noteService.criar(new Note(dono1, "A", "x"));         // 2 notas do dono1
+        noteService.criar(new Note(dono1, "A", "x"));
         noteService.criar(new Note(dono1, "B", "y"));
-        noteService.criar(new Note(dono2, "C", "z"));         // 1 nota do dono2
+        noteService.criar(new Note(dono2, "C", "z"));
 
         List<Note> doDono1 = noteService.buscarPorUsuario(dono1);
 
-        assertEquals(2, doDono1.size());                      // filtrou certo (2, não 3)
-        assertTrue(doDono1.stream()                           // e NENHUMA é de outro dono
-                .allMatch(n -> dono1.equals(n.getUserId()))); // allMatch = predicado p/ todos
+        assertEquals(2, doDono1.size());
+        assertTrue(doDono1.stream()
+                .allMatch(n -> dono1.equals(n.getUserId())));
     }
 
     @Test
@@ -58,11 +61,11 @@ class NoteServiceTest {
         Note original = noteService.criar(new Note(dono, "Velho", "Antigo"));
         Note novaVersao = new Note(dono, "Novo", "Moderno");
 
-        noteService.atualizar(original.getId(), novaVersao);  // regra do service: copia title/content
+        noteService.atualizar(original.getId(), novaVersao);
 
         Note depois = noteService.buscarPorId(original.getId());
-        assertEquals("Novo", depois.getTitle());              // título trocou
-        assertEquals("Moderno", depois.getContent());         // conteúdo trocou
+        assertEquals("Novo", depois.getTitle());
+        assertEquals("Moderno", depois.getContent());
     }
 
     @Test
@@ -70,9 +73,21 @@ class NoteServiceTest {
         UUID dono = UUID.randomUUID();
         Note nota = noteService.criar(new Note(dono, "T", "C"));
 
-        noteService.deletar(nota.getId());                    // remove do Map
+        noteService.deletar(nota.getId());
 
-        assertThrows(NotFoundException.class,                 // não achou mais = removida
+        assertThrows(NotFoundException.class,
                 () -> noteService.buscarPorId(nota.getId()));
+    }
+
+    @Test
+    void criarComUsuarioInexistenteDeveLancarBusinessException() {
+        UUID dono = UUID.randomUUID();
+        when(userService.existe(dono)).thenReturn(false);
+
+        assertThrows(BusinessException.class,
+                () -> noteService.criar(new Note(dono, "T", "C")));
+
+        assertTrue(noteService.listarTodas().isEmpty());
+        verify(userService).existe(dono);
     }
 }
