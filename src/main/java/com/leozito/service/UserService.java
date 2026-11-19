@@ -2,6 +2,7 @@ package com.leozito.service;
 
 import com.leozito.domain.BusinessException;
 import com.leozito.domain.User;
+import io.quarkus.elytron.security.common.BcryptUtil;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.NotFoundException;
 
@@ -40,6 +41,7 @@ public class UserService {
         }
 
         validarEmailUnico(user.getEmail(), user.getId());
+        user.setPassword(BcryptUtil.bcryptHash(user.getPassword()));
 
         userDatabase.put(user.getId(), user);
         return user;
@@ -51,7 +53,7 @@ public class UserService {
         validarEmailUnico(userAtualizado.getEmail(), id);
 
         userExistente.setEmail(userAtualizado.getEmail());
-        userExistente.setPassword(userAtualizado.getPassword());
+        userExistente.setPassword(BcryptUtil.bcryptHash(userAtualizado.getPassword()));
 
         userDatabase.put(id, userExistente);
         return userExistente;

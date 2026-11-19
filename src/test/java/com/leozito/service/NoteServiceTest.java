@@ -90,4 +90,36 @@ class NoteServiceTest {
         assertTrue(noteService.listarTodas().isEmpty());
         verify(userService).existe(dono);
     }
+
+    @Test
+    void listarTodasDeveRetornarNotasCadastradas() {
+        noteService.criar(new Note(UUID.randomUUID(), "A", "1"));
+        noteService.criar(new Note(UUID.randomUUID(), "B", "2"));
+
+        assertEquals(2, noteService.listarTodas().size());
+    }
+
+    @Test
+    void atualizarNotaInexistenteDeveLancarNotFound() {
+        UUID idQueNaoExiste = UUID.randomUUID();
+
+        assertThrows(NotFoundException.class,
+                () -> noteService.atualizar(idQueNaoExiste,
+                        new Note(UUID.randomUUID(), "T", "C")));
+    }
+
+    @Test
+    void deletarNotaInexistenteDeveLancarNotFound() {
+        UUID idQueNaoExiste = UUID.randomUUID();
+
+        assertThrows(NotFoundException.class,
+                () -> noteService.deletar(idQueNaoExiste));
+    }
+
+    @Test
+    void buscarPorUsuarioSemNotasDeveRetornarListaVazia() {
+        UUID donoSemNotas = UUID.randomUUID();
+
+        assertTrue(noteService.buscarPorUsuario(donoSemNotas).isEmpty());
+    }
 }

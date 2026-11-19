@@ -2,6 +2,7 @@ package com.leozito.service;
 
 import com.leozito.domain.BusinessException;
 import com.leozito.domain.User;
+import io.quarkus.elytron.security.common.BcryptUtil;
 import jakarta.ws.rs.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,12 +22,14 @@ class UserServiceTest {
     }
 
     @Test
-    void criarDeveGuardarUsuario() {
+    void criarDeveGuardarUsuarioComSenhaHasheada() {
         User user = new User("ana@mail.com", "senha123");
         User criado = userService.criar(user);
 
         assertNotNull(criado.getId());
         assertEquals("ana@mail.com", criado.getEmail());
+        assertTrue(BcryptUtil.matches("senha123", criado.getPassword()));
+        assertNotEquals("senha123", criado.getPassword());
     }
 
     @Test
@@ -55,7 +58,8 @@ class UserServiceTest {
 
         User depois = userService.buscarPorId(original.getId());
         assertEquals("new@x.com", depois.getEmail());
-        assertEquals("nova", depois.getPassword());
+        assertTrue(BcryptUtil.matches("nova", depois.getPassword()));
+        assertNotEquals("nova", depois.getPassword());
     }
 
     @Test
@@ -84,12 +88,18 @@ class UserServiceTest {
     }
 
     @Test
-    void atualizarComEmailProprioNaoDeveLancarExcecao() {
-        User user = userService.criar(new User("mesmo@x.com", "1"));
+    void atualizarUsuarioInexistenteDeveLancarNotFound() {
+        UUID idDesconhecido = UUID.randomUUID();
 
-        User atualizado = userService.atualizar(user.getId(), new User("mesmo@x.com", "nova"));
+        assertThrows(NotFoundException.class,
+                () -> userService.atualizar(idDesconhecido, new User("x@x.com", "1")));
+    }
 
-        assertEquals("mesmo@x.com", atualizado.getEmail());
-        assertEquals("nova", atualizado.getPassword());
+    @Test
+    void deletarUsuarioInexistenteDeveLancarNotFound() {
+        UUID idDesconhecido = UUID.randomUUID();
+
+        assertThrows(NotFoundException.class,
+                () -> userService.deletar(idDesconhecido));
     }
 }
